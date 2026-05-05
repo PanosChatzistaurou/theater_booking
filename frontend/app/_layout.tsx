@@ -1,24 +1,44 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { useEffect, useState } from 'react';
+import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const [token, setToken] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  
+  const segments = useSegments();
+  const router = useRouter();
+  const navigationState = useRootNavigationState();
 
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+  // 1. Re-run this check whenever the 'segments' change
+  useEffect(() => {
+    async function loadToken() {
+      try {
+        if (Platform.OS !== 'web') {
+          const savedToken = await SecureStore.getItemAsync('userToken');
+          setToken(savedToken);
+        }
+      } catch (e) {
+        console.error("Token load error", e);
+      } finally {
+        setIsReady(true);
+      }
+    }
+    loadToken();
+  }, [segments]); // Add segments here to catch the login transition
+
+  useEffect(() => {
+    if (!navigationState?.key || !isReady) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!token && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    } else if (token && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [token, isReady, navigationState?.key, segments]);
+
+  return <Slot />;
 }
