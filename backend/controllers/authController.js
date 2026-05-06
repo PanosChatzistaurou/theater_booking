@@ -1,95 +1,82 @@
-const { OAuth2Client } = require('google-auth-library');
-const jwt = require('jsonwebtoken');
-const pool = require('../db');
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
+const jwt    = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const pool   = require('../db');
+
+// Auth Controller BEGIN
 
 const registerLocal = async (req, res) => {
-  
-  const { name, email, password } = req.body;
-  let conn;
-  try {
-    conn = await pool.getConnection();
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    await conn.query(
-      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-      [name, email, hashedPassword]
-    );
-    
-    res.status(201).json({ message: "User registered" });
-  } catch (err) {
-    res.status(500).json({ error: "Email already exists or DB error" });
-  } finally {
-    if (conn) conn.release();
-  }
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+        return res.status(400).json({ error: 'Name, email and password are required' });
+    }
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const existing = await conn.query(
+            'SELECT id FROM users WHERE email = ?',
+            [email]
+        );
+
+        if (existing.length > 0) {
+            return res.status(409).json({ error: 'Email already in use' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        await conn.query(
+            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+            [name, email, hashedPassword]
+        );
+
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Registration failed', details: err.message });
+    } finally {
+        if (conn) conn.release();
+    }
 };
 
 const loginLocal = async (req, res) => {
-  
-  const { email, password } = req.body;
-  let conn;
-  try {
-    conn = await pool.getConnection();
-    const users = await conn.query("SELECT * FROM users WHERE email = ?", [email]);
-    const user = users[0];
+    const { email, password } = req.body;
 
-    if (user && await bcrypt.compare(password, user.password)) {
-      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.json({ token, user });
-    } else {
-      res.status(401).json({ error: "Invalid credentials" });
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
     }
-  } finally {
-    if (conn) conn.release();
-  }
-};
 
-const loginOIDC = async (req, res) => {
-  const { idToken } = req.body;
+    let conn;
+    try {
+        conn = await pool.getConnection();
 
-  try {
-    
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    const externalId = payload['sub']; 
+        const users = await conn.query(
+            'SELECT * FROM users WHERE email = ?',
+            [email]
+        );
+        const user = users[0];
 
-    let conn = await pool.getConnection();
-    
-    
-    let users = await conn.query("SELECT * FROM users WHERE external_id = ?", [externalId]);
-    let user = users[0];
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
 
-    if (!user) {
-      await conn.query(
-        "INSERT INTO users (name, email, external_id) VALUES (?, ?, ?)",
-        [payload.name, payload.email, externalId]
-      );
-      const newUsers = await conn.query("SELECT * FROM users WHERE external_id = ?", [externalId]);
-      user = newUsers[0];
+        const token = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    } catch (err) {
+        res.status(500).json({ error: 'Login failed', details: err.message });
+    } finally {
+        if (conn) conn.release();
     }
-    conn.release();
-
-    
-    const localToken = jwt.sign(
-      { id: user.id, email: user.email }, 
-      process.env.JWT_SECRET, 
-      { expiresIn: '1h' }
-    );
-
-    res.json({ token: localToken, user });
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid Google Token' });
-  }
 };
 
-module.exports = { 
-    loginOIDC, 
-    registerLocal, 
-    loginLocal 
+module.exports = {
+    registerLocal,
+    loginLocal
 };
+
+// Auth Controller END

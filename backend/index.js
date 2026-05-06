@@ -1,20 +1,35 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const theaterRoutes = require("./routes/theaterRoutes");
-const authRoutes = require("./routes/authRoutes");
+require('dotenv').config();
 
-const app = express();
+const express              = require('express');
+const cors                 = require('cors');
+const authRoutes           = require('./routes/authRoutes');
+const theaterRoutes        = require('./routes/theaterRoutes');
+const showsRoutes          = require('./routes/showsRoutes');
+const reservationsRoutes   = require('./routes/reservationsRoutes');
+
+const app  = express();
 const port = process.env.PORT || 3000;
+
+// MIDDLEWARE BEGIN
 
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// MIDDLEWARE END
 
-app.use("/auth", authRoutes);
-app.use("/theaters", theaterRoutes);
+// ROUTES BEGIN
 
-app.get("/health", (req, res) => res.json({ status: "ok" }));
+app.use('/auth',         authRoutes);
+app.use('/theaters',     theaterRoutes);
+app.use('/shows',        showsRoutes);
+app.use('/reservations', reservationsRoutes);
 
-app.listen(port, () => console.log(`Server on port ${port}`));
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// ROUTES END
+
+// SERVER BEGIN
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
+
+// SERVER END
