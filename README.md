@@ -1,5 +1,6 @@
-# STAGE PASS: THEATER RESERVATION SYSTEM
+# STAGE PASS: THEATER BOOKING SYSTEM
 
+Project for CN6035 MOBILE AND DISTRIBUTED SYSTEMS
 Mobile application for cinema reservations.
 Frontend: React Native (Expo).
 Backend: Node.js (Express).
@@ -20,7 +21,8 @@ Persistence: MariaDB.
 1. Navigate to /backend.
 2. Execute `npm install` to link dependencies.
 3. Configure environment variables in .env:
-
+```
+{
 DB_HOST=localhost
 DB_USER=root
 DB_NAME=theater_booking
@@ -28,6 +30,9 @@ DB_PASSWORD=1234
 DB_PORT=3306
 PORT=3000
 JWT_SECRET=your_jwt_secret_string
+}
+```
+
 
 4. Execute `node index.js` to start the daemon.
 
@@ -36,7 +41,8 @@ JWT_SECRET=your_jwt_secret_string
 ## 2. DATABASE ARCHITECTURE
 
 Execute the following SQL definitions in the MariaDB console to initialize the theater_booking schema:
-
+```
+{
 CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -106,6 +112,8 @@ CREATE TABLE `reservations` (
   CONSTRAINT `fk_res_showtime` FOREIGN KEY (`showtime_id`) REFERENCES `showtimes` (`id`),
   CONSTRAINT `fk_res_seat` FOREIGN KEY (`seat_id`) REFERENCES `theater_seats` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+}
+```
 
 ---
 
