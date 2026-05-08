@@ -22,7 +22,7 @@ Persistence: MariaDB.
 2. Execute `npm install` to link dependencies.
 3. Configure environment variables in .env:
 ```
-{
+
 DB_HOST=localhost
 DB_USER=root
 DB_NAME=theater_booking
@@ -30,7 +30,7 @@ DB_PASSWORD=1234
 DB_PORT=3306
 PORT=3000
 JWT_SECRET=your_jwt_secret_string
-}
+
 ```
 
 
@@ -42,7 +42,6 @@ JWT_SECRET=your_jwt_secret_string
 
 Execute the following SQL definitions in the MariaDB console to initialize the theater_booking schema:
 ```
-{
 CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -112,7 +111,6 @@ CREATE TABLE `reservations` (
   CONSTRAINT `fk_res_showtime` FOREIGN KEY (`showtime_id`) REFERENCES `showtimes` (`id`),
   CONSTRAINT `fk_res_seat` FOREIGN KEY (`seat_id`) REFERENCES `theater_seats` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-}
 ```
 
 ---
