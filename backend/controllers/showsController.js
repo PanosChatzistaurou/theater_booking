@@ -73,7 +73,7 @@ const getShowtimeSeats = async (req, res) => {
                     ELSE TRUE
                 END               AS is_available
              FROM showtimes st
-             JOIN theatre_seats ts ON ts.theater_id = st.theater_id
+             JOIN theater_seats ts ON ts.theater_id = st.theater_id
              LEFT JOIN reservations r
                 ON  r.seat_id     = ts.id
                 AND r.showtime_id = st.id

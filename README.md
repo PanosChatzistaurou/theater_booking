@@ -1,57 +1,137 @@
-# Theater Booking System
+# STAGE PASS: THEATER RESERVATION SYSTEM
 
-Mobile app for cinema reservations with a Node.js/MariaDB backend.
-
-## 1. Backend Setup
-
-1. Navigate to `/backend`.
-2. Run `npm install`.
-3. Create `.env` in the backend root:
-```env
-PORT=3000
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=theater_db
-JWT_SECRET=any_random_string
-```
-4. Run `node index.js`.
-
-## 2. Database Setup
-
-Execute this in MariaDB to initialize tables:
-
-```sql
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255)
-);
-
-CREATE TABLE theaters (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    location VARCHAR(255) NOT NULL
-);
-```
-
-## 3. Frontend Setup
-
-1. Navigate to `/frontend`.
-2. Run `npm install`.
-3. Create `.env` in the frontend root:
-```env
-EXPO_PUBLIC_API_URL=http://<YOUR_LOCAL_IP>:3000
-```
-4. Start the app: `npx expo start -c`
+Mobile application for cinema reservations.
+Frontend: React Native (Expo).
+Backend: Node.js (Express).
+Persistence: MariaDB.
 
 ---
 
-## 🛠 Critical Requirements
+## SYSTEM SPECIFICATIONS
 
-* **IP Match**: Replace `<YOUR_LOCAL_IP>` with your machine's IPv4 (e.g., `192.168.1.7`). `localhost` will fail on physical devices.
-* **Firewall**: Open port `3000` for inbound traffic on your computer.
-* **Cache**: Use the `-c` flag when starting Expo after any `.env` changes.
-* **Git**: Ensure `.env` files are not pushed to the repository.
-````</YOUR_LOCAL_IP>
+* **Runtime**: Node.js v24.13.1 or higher.
+* **Database**: MariaDB v12.2.2 or higher.
+* **API Port**: 3000.
+
+---
+
+## 1. BACKEND INSTALLATION
+
+1. Navigate to /backend.
+2. Execute `npm install` to link dependencies.
+3. Configure environment variables in .env:
+
+DB_HOST=localhost
+DB_USER=root
+DB_NAME=theater_booking
+DB_PASSWORD=1234
+DB_PORT=3306
+PORT=3000
+JWT_SECRET=your_jwt_secret_string
+
+4. Execute `node index.js` to start the daemon.
+
+---
+
+## 2. DATABASE ARCHITECTURE
+
+Execute the following SQL definitions in the MariaDB console to initialize the theater_booking schema:
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `external_id` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `external_id` (`external_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `theaters` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `location` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `num_rows` int(11) NOT NULL,
+  `num_cols` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `shows` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `duration` int(11) DEFAULT NULL,
+  `age_rating` varchar(10) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `showtimes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `show_id` int(11) DEFAULT NULL,
+  `theater_id` int(11) DEFAULT NULL,
+  `start_time` datetime NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `show_id` (`show_id`),
+  KEY `theater_id` (`theater_id`),
+  CONSTRAINT `fk_show` FOREIGN KEY (`show_id`) REFERENCES `shows` (`id`),
+  CONSTRAINT `fk_theater` FOREIGN KEY (`theater_id`) REFERENCES `theaters` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `theater_seats` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `theater_id` int(11) DEFAULT NULL,
+  `row_label` varchar(5) NOT NULL,
+  `column_number` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_physical_seat` (`theater_id`,`row_label`,`column_number`),
+  CONSTRAINT `fk_seat_theater` FOREIGN KEY (`theater_id`) REFERENCES `theaters` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `reservations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `showtime_id` int(11) DEFAULT NULL,
+  `seat_id` int(11) DEFAULT NULL,
+  `status` enum('PENDING','CONFIRMED','CANCELLED') DEFAULT 'PENDING',
+  `expires_at` datetime DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_booking` (`showtime_id`,`seat_id`),
+  KEY `user_id` (`user_id`),
+  KEY `seat_id` (`seat_id`),
+  CONSTRAINT `fk_res_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_res_showtime` FOREIGN KEY (`showtime_id`) REFERENCES `showtimes` (`id`),
+  CONSTRAINT `fk_res_seat` FOREIGN KEY (`seat_id`) REFERENCES `theater_seats` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+---
+
+## 3. FRONTEND INSTALLATION
+
+1. Navigate to /frontend.
+2. Execute `npm install`.
+3. Configure environment variables in .env:
+
+EXPO_PUBLIC_API_URL=http://<YOUR_LOCAL_IPV4>:3000
+
+4. Start the development server with cache purge: `npx expo start -c`.
+
+---
+
+## CRITICAL OPERATIONAL REQUIREMENTS
+
+* **NETWORKING**: The `EXPO_PUBLIC_API_URL` must use the machine's local IPv4 address.
+* **NETWORKING**: Loopback addresses will fail on physical devices.
+* **DRAWER NAVIGATION**: The `react-native-reanimated/plugin` must be present in babel.config.js.
+* **CACHE MANAGEMENT**: Any modification to .env or significant file relocation requires a full cache purge using the -c flag during startup.
+
+---
+
+## TODO / PENDING WORK
+
+* Implement multi-seat selection logic for single transactions.
+* Replace placeholder iconography with new asset package.
+* Resolve the unauthorized status code 401/403 trap when initializing the login screen.

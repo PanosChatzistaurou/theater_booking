@@ -11,8 +11,7 @@ import {
 } from "react-native";
 import { Stack, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
-import * as SecureStore from "expo-secure-store";
+import { api, getApiError } from "../utils/api";
 
 // TYPES
 
@@ -66,19 +65,15 @@ export default function BookingsScreen() {
 	const fetchReservations = async (isRefresh = false) => {
 		if (isRefresh) setRefreshing(true);
 		try {
-			const token = await SecureStore.getItemAsync("userToken");
-			const res = await axios.get(
-				`${process.env.EXPO_PUBLIC_API_URL}/reservations`,
-				{ headers: { Authorization: `Bearer ${token}` } },
-			);
+			const res = await api.get('/reservations');
 
 			const activeReservations = res.data.filter(
 				(item: Reservation) => item.status !== "CANCELLED",
 			);
 
 			setReservations(activeReservations);
-		} catch (err) {
-			console.error(err);
+		} catch (err: unknown) {
+			Alert.alert("Error", getApiError(err));
 		} finally {
 			setLoading(false);
 			setRefreshing(false);
@@ -106,24 +101,11 @@ export default function BookingsScreen() {
 					style: "destructive",
 					onPress: async () => {
 						try {
-							const token =
-								await SecureStore.getItemAsync("userToken");
-							await axios.delete(
-								`${process.env.EXPO_PUBLIC_API_URL}/reservations/${id}`,
-								{
-									headers: {
-										Authorization: `Bearer ${token}`,
-									},
-								},
-							);
+							await api.delete(`/reservations/${id}`);
 							fetchReservations();
-						} catch (err: any) {
-							Alert.alert(
-								"Error",
-								err.response?.data?.error ||
-									"Failed to cancel booking",
-							);
-						}
+						} catch (err: unknown) {
+                            Alert.alert("Error", getApiError(err));
+                        }
 					},
 				},
 			],
@@ -136,6 +118,7 @@ export default function BookingsScreen() {
 		<View style={styles.container}>
 			<Stack.Screen
 				options={{
+					headerShown: true,
 					title: "My Bookings",
 					headerTintColor: "#E8E8E8",
 					headerStyle: { backgroundColor: "#1E1E1E" },
@@ -263,7 +246,7 @@ export default function BookingsScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#1E1E1E",
+		backgroundColor: "#0D0D0D",
 	},
 	center: {
 		flex: 1,
@@ -284,11 +267,11 @@ const styles = StyleSheet.create({
 		padding: 16,
 	},
 	card: {
-		backgroundColor: "#2C2C2C",
+		backgroundColor: "#161616",
 		borderRadius: 16,
 		marginBottom: 12,
 		borderWidth: 1,
-		borderColor: "#3D3D3D",
+		borderColor: "#222",
 		overflow: "hidden",
 	},
 	cardHeader: {
@@ -299,7 +282,7 @@ const styles = StyleSheet.create({
 		paddingTop: 14,
 		paddingBottom: 10,
 		borderBottomWidth: 1,
-		borderBottomColor: "#3D3D3D",
+		borderBottomColor: "#222",
 	},
 	showTitle: {
 		color: "#E8E8E8",
@@ -338,7 +321,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 16,
 		paddingVertical: 12,
 		borderTopWidth: 1,
-		borderTopColor: "#3D3D3D",
+		borderTopColor: "#222",
 	},
 	price: {
 		color: "#8B0000",

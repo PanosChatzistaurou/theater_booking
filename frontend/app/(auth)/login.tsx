@@ -6,137 +6,264 @@ import {
 	TouchableOpacity,
 	StyleSheet,
 	Alert,
+	KeyboardAvoidingView,
+	Platform,
+	ScrollView,
 } from "react-native";
-import axios from "axios";
+import { api, getApiError } from "../../utils/api";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+
+// COMPONENT
 
 export default function AuthScreen() {
 	const [isRegistering, setIsRegistering] = useState(false);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [name, setName] = useState("");
+	const [loading, setLoading] = useState(false);
 	const router = useRouter();
 
+	// AUTH HANDLER
+
 	const handleAuth = async () => {
+		setLoading(true);
 		const endpoint = isRegistering ? "/auth/register" : "/auth/login";
 		const payload = isRegistering
 			? { name, email, password }
 			: { email, password };
 
 		try {
-			const res = await axios.post(
-				`${process.env.EXPO_PUBLIC_API_URL}${endpoint}`,
-				payload,
-			);
+			const res = await api.post(endpoint, payload);
 
-			if (!isRegistering) {
-				// Save Token, Name, and Email
+			if (isRegistering) {
+				Alert.alert("Account Created", "You can now sign in.");
+				setIsRegistering(false);
+			} else {
 				await SecureStore.setItemAsync("userToken", res.data.token);
 				await SecureStore.setItemAsync("userName", res.data.user.name);
 				await SecureStore.setItemAsync(
 					"userEmail",
 					res.data.user.email,
 				);
-
-				router.replace("/(tabs)");
+				router.replace("/(drawer)");
 			}
-		} catch (err: any) {
-			const errorDetail = err.response?.data?.error || err.message;
-			Alert.alert("Error", errorDetail);
-		}
+		} catch (err: unknown) {
+            Alert.alert("Error", getApiError(err));
+        }
 	};
 
+	// RENDER
+
 	return (
-		<View style={styles.container}>
-			<Text style={styles.title}>
-				{isRegistering ? "Create Account" : "Welcome Back"}
-			</Text>
+		<KeyboardAvoidingView
+			style={styles.root}
+			behavior={Platform.OS === "ios" ? "padding" : undefined}
+		>
+			<StatusBar style="light" />
 
-			{/* Show name input only when registering */}
-			{isRegistering && (
-				<TextInput
-					style={styles.input}
-					placeholder="Full Name"
-					placeholderTextColor="#888"
-					onChangeText={setName}
-					autoCapitalize="words"
-				/>
-			)}
+			<View style={styles.posterStripe} />
 
-			<TextInput
-				style={styles.input}
-				placeholder="Email"
-				placeholderTextColor="#888"
-				onChangeText={setEmail}
-				autoCapitalize="none"
-				keyboardType="email-address"
-			/>
-			<TextInput
-				style={styles.input}
-				placeholder="Password"
-				placeholderTextColor="#888"
-				secureTextEntry
-				onChangeText={setPassword}
-			/>
+			<ScrollView
+				contentContainerStyle={styles.scroll}
+				keyboardShouldPersistTaps="handled"
+			>
+				<View style={styles.hero}>
+					<View style={styles.taglineRow}>
+						<View style={styles.taglineLine} />
+						<Text style={styles.tagline}>NOW SHOWING</Text>
+						<View style={styles.taglineLine} />
+					</View>
+					<Text style={styles.title}>STAGE{"\n"}PASS</Text>
+					<Text style={styles.subtitle}>
+						{isRegistering
+							? "CREATE YOUR ACCOUNT"
+							: "SIGN IN TO CONTINUE"}
+					</Text>
+				</View>
 
-			<TouchableOpacity style={styles.button} onPress={handleAuth}>
-				<Text style={styles.buttonText}>
-					{isRegistering ? "Register" : "Login"}
-				</Text>
-			</TouchableOpacity>
+				<View style={styles.form}>
+					{isRegistering && (
+						<View style={styles.fieldWrap}>
+							<Text style={styles.fieldLabel}>FULL NAME</Text>
+							<TextInput
+								style={styles.input}
+								placeholder="John Doe"
+								placeholderTextColor="#333"
+								onChangeText={setName}
+								autoCapitalize="words"
+							/>
+						</View>
+					)}
 
-			<TouchableOpacity onPress={() => setIsRegistering(!isRegistering)}>
-				<Text style={styles.toggleText}>
-					{isRegistering
-						? "Already have an account? Login"
-						: "Need an account? Register"}
-				</Text>
-			</TouchableOpacity>
+					<View style={styles.fieldWrap}>
+						<Text style={styles.fieldLabel}>EMAIL</Text>
+						<TextInput
+							style={styles.input}
+							placeholder="you@example.com"
+							placeholderTextColor="#333"
+							onChangeText={setEmail}
+							autoCapitalize="none"
+							keyboardType="email-address"
+						/>
+					</View>
 
-			{/* 
-        TODO: Add log in with Google
-      */}
-		</View>
+					<View style={styles.fieldWrap}>
+						<Text style={styles.fieldLabel}>PASSWORD</Text>
+						<TextInput
+							style={styles.input}
+							placeholder="••••••••"
+							placeholderTextColor="#333"
+							secureTextEntry
+							onChangeText={setPassword}
+						/>
+					</View>
+
+					<TouchableOpacity
+						style={[
+							styles.button,
+							loading && styles.buttonDisabled,
+						]}
+						onPress={handleAuth}
+						activeOpacity={0.85}
+						disabled={loading}
+					>
+						<Text style={styles.buttonText}>
+							{loading
+								? "PLEASE WAIT..."
+								: isRegistering
+									? "CREATE ACCOUNT"
+									: "SIGN IN"}
+						</Text>
+					</TouchableOpacity>
+
+					<TouchableOpacity
+						style={styles.toggle}
+						onPress={() => setIsRegistering(!isRegistering)}
+					>
+						<Text style={styles.toggleText}>
+							{isRegistering
+								? "ALREADY HAVE AN ACCOUNT?  "
+								: "NEW HERE?  "}
+							<Text style={styles.toggleAccent}>
+								{isRegistering ? "SIGN IN" : "REGISTER"}
+							</Text>
+						</Text>
+					</TouchableOpacity>
+				</View>
+			</ScrollView>
+		</KeyboardAvoidingView>
 	);
 }
 
+// STYLES
+
 const styles = StyleSheet.create({
-	container: {
+	root: {
 		flex: 1,
-		backgroundColor: "#1E1E1E",
+		backgroundColor: "#0D0D0D",
+	},
+	posterStripe: {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		height: 4,
+		backgroundColor: "#8B0000",
+	},
+	scroll: {
+		flexGrow: 1,
 		justifyContent: "center",
-		padding: 20,
+		paddingHorizontal: 28,
+		paddingTop: 20,     
+		paddingBottom: 250, 
+	},
+	hero: {
+		marginBottom: 24,
+	},
+	taglineRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
+		marginBottom: 16,
+	},
+	taglineLine: {
+		flex: 1,
+		height: 1,
+		backgroundColor: "#8B0000",
+	},
+	tagline: {
+		color: "#8B0000",
+		fontSize: 11,
+		fontWeight: "800",
+		letterSpacing: 4,
 	},
 	title: {
+		color: "#E8E8E8",
+		fontSize: 64,
+		fontWeight: "900",
+		lineHeight: 60,
+		letterSpacing: -2,
+		marginBottom: 14,
+	},
+	subtitle: {
+		color: "#444",
+		fontSize: 11,
+		fontWeight: "700",
+		letterSpacing: 3,
+	},
+	form: {
+		gap: 4,
+	},
+	fieldWrap: {
+		marginBottom: 16,
+	},
+	fieldLabel: {
 		color: "#8B0000",
-		fontSize: 28,
-		fontWeight: "bold",
-		marginBottom: 20,
-		textAlign: "center",
+		fontSize: 10,
+		fontWeight: "800",
+		letterSpacing: 2.5,
+		marginBottom: 8,
 	},
 	input: {
-		backgroundColor: "#2C2C2C",
-		color: "#FFF",
-		padding: 15,
-		borderRadius: 8,
-		marginBottom: 15,
+		backgroundColor: "#161616",
+		color: "#E8E8E8",
+		padding: 16,
+		borderRadius: 4,
+		fontSize: 15,
+		borderWidth: 1,
+		borderColor: "#222",
+		borderLeftWidth: 3,
+		borderLeftColor: "#8B0000",
 	},
 	button: {
 		backgroundColor: "#8B0000",
-		padding: 15,
-		borderRadius: 8,
+		padding: 18,
+		borderRadius: 4,
 		alignItems: "center",
-		marginTop: 10,
+		marginTop: 8,
+	},
+	buttonDisabled: {
+		opacity: 0.5,
 	},
 	buttonText: {
 		color: "#FFF",
-		fontWeight: "bold",
-		fontSize: 16,
+		fontWeight: "900",
+		fontSize: 13,
+		letterSpacing: 3,
+	},
+	toggle: {
+		marginTop: 24,
+		alignItems: "center",
 	},
 	toggleText: {
-		color: "#B0B0B0",
-		marginTop: 20,
-		textAlign: "center",
+		color: "#444",
+		fontSize: 11,
+		fontWeight: "700",
+		letterSpacing: 1.5,
+	},
+	toggleAccent: {
+		color: "#8B0000",
 	},
 });
