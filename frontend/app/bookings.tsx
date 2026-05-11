@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Stack, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { api, getApiError } from "../utils/api";
+import { api, getApiError, isAuthError } from "../utils/api";
 
 // TYPES
 
@@ -73,6 +73,7 @@ export default function BookingsScreen() {
 
 			setReservations(activeReservations);
 		} catch (err: unknown) {
+			if (isAuthError(err)) return;
 			Alert.alert("Error", getApiError(err));
 		} finally {
 			setLoading(false);

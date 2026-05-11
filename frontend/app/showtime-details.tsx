@@ -46,11 +46,11 @@ export default function ShowtimeDetailsScreen() {
 	const { showtime_id, title, date, time, price, theater_name } =
 		useLocalSearchParams();
 	const router = useRouter();
-    const insets = useSafeAreaInsets();
+	const insets = useSafeAreaInsets();
 
 	const [seats, setSeats] = useState<Seat[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
+	const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
 	const [booking, setBooking] = useState(false);
 
 	useEffect(() => {
@@ -72,10 +72,16 @@ export default function ShowtimeDetailsScreen() {
 	// BOOKING HANDLER
 
 	const handleBook = async () => {
-		if (!selectedSeat) return;
+		if (selectedSeats.length === 0) return;
+
+		const totalAmount = (Number(price) * selectedSeats.length).toFixed(2);
+		const seatLabels = selectedSeats
+			.map((s) => `${s.row_label}${s.column_number}`)
+			.join(", ");
+
 		Alert.alert(
 			"CONFIRM BOOKING",
-			`${title}\n${date}  ·  ${time}\nSeat ${selectedSeat.row_label}${selectedSeat.column_number}  ·  €${Number(price).toFixed(2)}`,
+			`${title}\n${date}  ·  ${time}\nSeats: ${seatLabels}  ·  €${totalAmount}`,
 			[
 				{ text: "CANCEL", style: "cancel" },
 				{
@@ -83,13 +89,17 @@ export default function ShowtimeDetailsScreen() {
 					onPress: async () => {
 						setBooking(true);
 						try {
-							const createRes = await api.post("/reservations", {
-								showtime_id: Number(showtime_id),
-								seat_id: selectedSeat.seat_id,
-							});
+							await Promise.all(
+								selectedSeats.map((seat) =>
+									api.post("/reservations", {
+										showtime_id: Number(showtime_id),
+										seat_id: seat.seat_id,
+									}),
+								),
+							);
 							Alert.alert(
 								"BOOKING CONFIRMED",
-								`Seat ${selectedSeat.row_label}${selectedSeat.column_number} is yours.`,
+								`Seats ${seatLabels} are yours.`,
 								[
 									{
 										text: "MY BOOKINGS",
@@ -121,7 +131,7 @@ export default function ShowtimeDetailsScreen() {
 		<View style={styles.container}>
 			<Stack.Screen
 				options={{
-                    headerShown: true,
+					headerShown: true,
 					title: "",
 					headerTintColor: "#E8E8E8",
 					headerStyle: { backgroundColor: "#0D0D0D" },
@@ -161,13 +171,11 @@ export default function ShowtimeDetailsScreen() {
 					<ScrollView contentContainerStyle={styles.seatGrid}>
 						{rows.map(({ row, seats: rowSeats }) => (
 							<View key={row} style={styles.seatRow}>
-								
 								{rowSeats.map((seat) => {
 									const available = Boolean(
 										seat.is_available,
 									);
-									const selected =
-										selectedSeat?.seat_id === seat.seat_id;
+									const selected = selectedSeats.some((s) => s.seat_id === seat.seat_id);
 									return (
 										<TouchableOpacity
 											key={seat.seat_id}
@@ -178,8 +186,10 @@ export default function ShowtimeDetailsScreen() {
 											]}
 											disabled={!available}
 											onPress={() =>
-												setSelectedSeat(
-													selected ? null : seat,
+												setSelectedSeats((prev) =>
+													selected
+														? prev.filter((s) => s.seat_id !== seat.seat_id)
+														: [...prev, seat]
 												)
 											}
 											activeOpacity={0.7}
@@ -193,7 +203,8 @@ export default function ShowtimeDetailsScreen() {
 														styles.seatTextSelected,
 												]}
 											>
-												{seat.row_label}{seat.column_number}
+												{seat.row_label}
+												{seat.column_number}
 											</Text>
 										</TouchableOpacity>
 									);
@@ -240,15 +251,14 @@ export default function ShowtimeDetailsScreen() {
 				</ScrollView>
 			)}
 
-			{selectedSeat && (
+			{selectedSeats.length > 0 && (
 				<View style={[styles.bookingBar, { paddingBottom: Math.max(insets.bottom + 16, 32) }]}>
 					<View>
 						<Text style={styles.bookingBarLabel}>
-							SELECTED SEAT
+							SELECTED SEATS
 						</Text>
 						<Text style={styles.bookingBarSeat}>
-							{selectedSeat.row_label}
-							{selectedSeat.column_number}
+							{selectedSeats.map(s => `${s.row_label}${s.column_number}`).join(", ")}
 						</Text>
 					</View>
 					<TouchableOpacity
@@ -264,7 +274,7 @@ export default function ShowtimeDetailsScreen() {
 							<ActivityIndicator size="small" color="#FFF" />
 						) : (
 							<Text style={styles.bookButtonText}>
-								BOOK €{Number(price).toFixed(2)}
+								BOOK €{(Number(price) * selectedSeats.length).toFixed(2)}
 							</Text>
 						)}
 					</TouchableOpacity>

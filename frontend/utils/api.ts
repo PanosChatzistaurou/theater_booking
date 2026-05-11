@@ -30,10 +30,18 @@ api.interceptors.response.use(
 			error.response &&
 			(error.response.status === 401 || error.response.status === 403)
 		) {
-			// Token expired or invalid - wipe it and kick them to login
+			// Token expired or invalid - wipe all data and kick them to login
 			if (Platform.OS !== "web") {
 				await SecureStore.deleteItemAsync("userToken");
+				await SecureStore.deleteItemAsync("userName");
+				await SecureStore.deleteItemAsync("userEmail");
 			}
+			
+			// Clear the navigation stack so the user cannot swipe back
+			if (router.canGoBack()) {
+				router.dismissAll();
+			}
+			
 			// Use the imperative router to redirect from outside a React component
 			router.replace("/(auth)/login");
 		}
@@ -41,6 +49,9 @@ api.interceptors.response.use(
 	},
 );
 
+export function isAuthError(err: unknown): boolean {
+	return axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403);
+}
 export function getApiError(err: unknown): string {
 	if (axios.isAxiosError(err)) {
 		// It's an API error, extract the backend message safely

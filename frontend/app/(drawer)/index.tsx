@@ -10,7 +10,7 @@ import {
     Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { api, getApiError } from "../../utils/api";
+import { api, getApiError, isAuthError } from "../../utils/api";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
@@ -40,6 +40,7 @@ export default function HomeScreen() {
 				setTheaters(res.data);
 				setFiltered(res.data);
 			} catch (err: unknown) {
+				if (isAuthError(err)) return;
 				Alert.alert("Error", getApiError(err));
 			} finally {
 				setLoading(false);
