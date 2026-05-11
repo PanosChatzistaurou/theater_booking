@@ -138,6 +138,4 @@ EXPO_PUBLIC_API_URL=http://<YOUR_LOCAL_IPV4>:3000
 
 ## TODO / PENDING WORK
 
-* Implement multi-seat selection logic for single transactions.
 * Replace placeholder iconography with new asset package.
-* Resolve the unauthorized status code 401/403 trap when initializing the login screen.
