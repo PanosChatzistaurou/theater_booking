@@ -5,7 +5,7 @@ const {
     createReservation,
     confirmReservation,
     cancelReservation,
-    getUserReservations
+    getUserReservations,
 } = require('../controllers/reservationsController');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -15,6 +15,7 @@ router.get('/',      authMiddleware, getUserReservations);
 router.post('/',     authMiddleware, createReservation);
 router.put('/:id',   authMiddleware, confirmReservation);
 router.delete('/:id',authMiddleware, cancelReservation);
+
 
 module.exports = router;
 

@@ -6,12 +6,12 @@ import {
 	TouchableOpacity,
 	FlatList,
 	ActivityIndicator,
-    Alert,
+	Alert,
+	TextInput,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getApiError } from "../utils/api";
-
 
 // TYPES
 
@@ -46,6 +46,8 @@ export default function TheaterDetailsScreen() {
 	const { id, name } = useLocalSearchParams();
 	const router = useRouter();
 	const [showtimes, setShowtimes] = useState<Showtime[]>([]);
+	const [filteredShowtimes, setFilteredShowtimes] = useState<Showtime[]>([]);
+	const [search, setSearch] = useState("");
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -53,6 +55,7 @@ export default function TheaterDetailsScreen() {
 			try {
 				const res = await api.get(`/theaters/${id}/showtimes`);
 				setShowtimes(res.data);
+				setFilteredShowtimes(res.data);
 			} catch (err: unknown) {
 				Alert.alert("Error", getApiError(err));
 			} finally {
@@ -62,13 +65,29 @@ export default function TheaterDetailsScreen() {
 		fetchShowtimes();
 	}, [id]);
 
+	// SEARCH HANDLER
+
+	const handleSearch = (text: string) => {
+		setSearch(text);
+		if (!text) {
+			setFilteredShowtimes(showtimes);
+			return;
+		}
+		const lowerText = text.toLowerCase();
+		setFilteredShowtimes(
+			showtimes.filter((show) =>
+				show.title.toLowerCase().includes(lowerText),
+			),
+		);
+	};
+
 	// RENDER
 
 	return (
 		<View style={styles.container}>
 			<Stack.Screen
 				options={{
-                    headerShown: true,
+					headerShown: true,
 					title: (name as string) || "Theater",
 					headerTintColor: "#E8E8E8",
 					headerStyle: { backgroundColor: "#1E1E1E" },
@@ -88,24 +107,42 @@ export default function TheaterDetailsScreen() {
 				<Text style={styles.headerSubtitle}>Select a showtime</Text>
 			</View>
 
-			<Text style={styles.sectionLabel}>Available Showtimes</Text>
+			<View style={styles.searchContainer}>
+				<Ionicons name="search-outline" size={16} color="#444" />
+				<TextInput
+					style={styles.searchInput}
+					placeholder="SEARCH SHOWS..."
+					placeholderTextColor="#333"
+					value={search}
+					onChangeText={handleSearch}
+				/>
+				{search.length > 0 && (
+					<TouchableOpacity onPress={() => handleSearch("")}>
+						<Ionicons name="close" size={16} color="#444" />
+					</TouchableOpacity>
+				)}
+			</View>
 
 			{loading ? (
 				<View style={styles.center}>
 					<ActivityIndicator size="large" color="#8B0000" />
 				</View>
-			) : showtimes.length === 0 ? (
+			) : filteredShowtimes.length === 0 ? (
 				<View style={styles.center}>
 					<Ionicons
 						name="calendar-outline"
 						size={48}
 						color="#3D3D3D"
 					/>
-					<Text style={styles.emptyText}>No showtimes available</Text>
+					<Text style={styles.emptyText}>
+						{search.length > 0
+							? "No shows match your search"
+							: "No showtimes available"}
+					</Text>
 				</View>
 			) : (
 				<FlatList
-					data={showtimes}
+					data={filteredShowtimes}
 					keyExtractor={(item) => item.showtime_id.toString()}
 					contentContainerStyle={styles.listContent}
 					renderItem={({ item }) => {
@@ -206,15 +243,26 @@ const styles = StyleSheet.create({
 		color: "#666",
 		fontSize: 13,
 	},
-	sectionLabel: {
-		color: "#8B0000",
-		fontSize: 11,
-		fontWeight: "700",
-		textTransform: "uppercase",
-		letterSpacing: 1.2,
+	searchContainer: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
 		marginHorizontal: 16,
 		marginTop: 20,
-		marginBottom: 10,
+		marginBottom: 16,
+		paddingVertical: 12,
+		paddingHorizontal: 16,
+		backgroundColor: "#161616",
+		borderRadius: 8,
+		borderWidth: 1,
+		borderColor: "#222",
+	},
+	searchInput: {
+		flex: 1,
+		color: "#E8E8E8",
+		fontSize: 12,
+		fontWeight: "700",
+		letterSpacing: 2,
 	},
 	center: {
 		flex: 1,

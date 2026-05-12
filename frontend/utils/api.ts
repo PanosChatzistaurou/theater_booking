@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
-import { router } from "expo-router"; // Imperative router API
+import { router } from "expo-router";
 import { Platform } from "react-native";
 
 export const api = axios.create({
@@ -12,7 +12,7 @@ api.interceptors.request.use(
 		if (Platform.OS !== "web") {
 			const token = await SecureStore.getItemAsync("userToken");
 			if (token) {
-				// CORRECT SAFE ASSIGNMENT
+				
 				config.headers.set("Authorization", `Bearer ${token}`);
 			}
 		}

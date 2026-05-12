@@ -9,13 +9,14 @@ import {
 	Alert,
 	RefreshControl,
 } from "react-native";
-import { Stack, useFocusEffect } from "expo-router";
+import { router, Stack, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getApiError, isAuthError } from "../utils/api";
 
 // TYPES
 
 interface Reservation {
+	showtime_id: string | number | (string | number)[] | null | undefined;
 	reservation_id: number;
 	status: "PENDING" | "CONFIRMED" | "CANCELLED";
 	expires_at: string | null;
@@ -65,7 +66,7 @@ export default function BookingsScreen() {
 	const fetchReservations = async (isRefresh = false) => {
 		if (isRefresh) setRefreshing(true);
 		try {
-			const res = await api.get('/reservations');
+			const res = await api.get("/reservations");
 
 			const activeReservations = res.data.filter(
 				(item: Reservation) => item.status !== "CANCELLED",
@@ -105,8 +106,8 @@ export default function BookingsScreen() {
 							await api.delete(`/reservations/${id}`);
 							fetchReservations();
 						} catch (err: unknown) {
-                            Alert.alert("Error", getApiError(err));
-                        }
+							Alert.alert("Error", getApiError(err));
+						}
 					},
 				},
 			],

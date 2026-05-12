@@ -175,7 +175,9 @@ export default function ShowtimeDetailsScreen() {
 									const available = Boolean(
 										seat.is_available,
 									);
-									const selected = selectedSeats.some((s) => s.seat_id === seat.seat_id);
+									const selected = selectedSeats.some(
+										(s) => s.seat_id === seat.seat_id,
+									);
 									return (
 										<TouchableOpacity
 											key={seat.seat_id}
@@ -188,8 +190,12 @@ export default function ShowtimeDetailsScreen() {
 											onPress={() =>
 												setSelectedSeats((prev) =>
 													selected
-														? prev.filter((s) => s.seat_id !== seat.seat_id)
-														: [...prev, seat]
+														? prev.filter(
+																(s) =>
+																	s.seat_id !==
+																	seat.seat_id,
+															)
+														: [...prev, seat],
 												)
 											}
 											activeOpacity={0.7}
@@ -252,13 +258,20 @@ export default function ShowtimeDetailsScreen() {
 			)}
 
 			{selectedSeats.length > 0 && (
-				<View style={[styles.bookingBar, { paddingBottom: Math.max(insets.bottom + 16, 32) }]}>
+				<View
+					style={[
+						styles.bookingBar,
+						{ paddingBottom: Math.max(insets.bottom + 16, 32) },
+					]}
+				>
 					<View>
 						<Text style={styles.bookingBarLabel}>
 							SELECTED SEATS
 						</Text>
 						<Text style={styles.bookingBarSeat}>
-							{selectedSeats.map(s => `${s.row_label}${s.column_number}`).join(", ")}
+							{selectedSeats
+								.map((s) => `${s.row_label}${s.column_number}`)
+								.join(", ")}
 						</Text>
 					</View>
 					<TouchableOpacity
@@ -274,7 +287,10 @@ export default function ShowtimeDetailsScreen() {
 							<ActivityIndicator size="small" color="#FFF" />
 						) : (
 							<Text style={styles.bookButtonText}>
-								BOOK €{(Number(price) * selectedSeats.length).toFixed(2)}
+								BOOK €
+								{(Number(price) * selectedSeats.length).toFixed(
+									2,
+								)}
 							</Text>
 						)}
 					</TouchableOpacity>

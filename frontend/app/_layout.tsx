@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
+
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const segments = useSegments();
@@ -25,6 +26,7 @@ export default function RootLayout() {
     
     checkAuth();
   }, [segments, navState?.key]);
+
 
   if (!isReady) return null;
 
