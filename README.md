@@ -138,4 +138,3 @@ EXPO_PUBLIC_API_URL=http://<YOUR_LOCAL_IPV4>:3000
 
 ## TODO / PENDING WORK
 
-* Auth Security: Fix Network Error When Google Sign In
