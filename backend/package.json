@@ -19,6 +19,6 @@
     "jsonwebtoken": "^9.0.3",
     "mariadb": "^3.5.2",
     "nodemon": "^3.1.14",
-    "openid-client": "^6.8.4"
+    "openid-client": "^5.7.1"
   }
 }

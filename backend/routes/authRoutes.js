@@ -7,6 +7,7 @@ const { registerLocal, loginLocal, callbackOIDC } = require('../controllers/auth
  
 router.post('/register', registerLocal);
 router.post('/login',    loginLocal);
+router.post('/oidc/callback', callbackOIDC)
  
 module.exports = router;
  
