@@ -172,6 +172,7 @@ INSERT INTO showtimes (show_id, theater_id, start_time, price) VALUES
 2. Execute `npm install`.
 3. Configure environment variables in .env:
 
+```
 EXPO_PUBLIC_API_URL=http://<YOUR_LOCAL_IPV4>:3000
 EXPO_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
 EXPO_PUBLIC_GOOGLE_ANDROID_ID=your_google_android_id
@@ -179,6 +180,7 @@ EXPO_PUBLIC_REDIRECT_URI=https://auth.expo.io/@frontend/frontend
 EXPO_PUBLIC_AUTH0_CLIENT_ID=your_auth0_client_id
 EXPO_PUBLIC_AUTH_ENDPOINT=your_auth_endpoint
 EXPO_PUBLIC_TOKEN_ENDPOINT=your_token_endpoint
+```
 
 4. Start the development server with cache purge: `npx expo start -c`.
 
